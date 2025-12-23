@@ -12,11 +12,17 @@ return [
     */
 
     // =========================================================================
-    // LÍNEA A (Pastas Cortas) - Basado en LineaAController
+    // LÍNEA A (Pastas Cortas)
     // =========================================================================
     'linea-a' => [
         'label' => 'Línea A',
         'fields' => [
+            // --- MOLDES ---
+            ['type' => 'header', 'label' => 'Configuración de Moldes'],
+            ['name' => 'matricula_molde_1', 'label' => 'Matrícula Molde 1', 'type' => 'text'],
+            ['name' => 'matricula_molde_2', 'label' => 'Matrícula Molde 2 (Opcional)', 'type' => 'text'],
+
+            // --- VARIABLES ---
             ['type' => 'header', 'label' => 'Humedades de Proceso'],
             ['name' => 'trabatto', 'label' => '% Trabatto', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'presecado', 'label' => '% Presecado', 'type' => 'number', 'step' => '0.01'],
@@ -43,15 +49,21 @@ return [
     ],
 
     // =========================================================================
-    // LÍNEA B (Pastas Largas) - Basado en LineaBController
+    // LÍNEA B (Pastas Largas)
     // =========================================================================
     'linea-b' => [
         'label' => 'Línea B',
         'fields' => [
+            // --- MOLDES ---
+            ['type' => 'header', 'label' => 'Configuración de Moldes'],
+            ['name' => 'matricula_molde_1', 'label' => 'Matrícula Molde 1', 'type' => 'text'],
+            ['name' => 'matricula_molde_2', 'label' => 'Matrícula Molde 2 (Opcional)', 'type' => 'text'],
+
+            // --- VARIABLES ---
             ['type' => 'header', 'label' => 'Temperaturas de Secado'],
             ['name' => 'temp_aerotermo', 'label' => 'Temp. Aerotermo', 'type' => 'number'],
             ['name' => 'delta_aerotermo', 'label' => 'Delta Aerotermo', 'type' => 'number'],
-            ['name' => 'presecado', 'label' => 'Presecado', 'type' => 'number'], // ¿Es % o Temp? Asumo valor numérico
+            ['name' => 'presecado', 'label' => 'Presecado', 'type' => 'number'], 
             
             ['name' => 'temp_1a_presecado', 'label' => 'Temp. 1a Presecado', 'type' => 'number'],
             ['name' => 'delta_1a_presecado', 'label' => 'Delta 1a Presecado', 'type' => 'number'],
@@ -83,11 +95,17 @@ return [
     ],
 
     // =========================================================================
-    // LÍNEA C (Especialidades/Nidos/Lasagna) - Basado en LineaCController
+    // LÍNEA C (Especialidades/Nidos/Lasagna)
     // =========================================================================
     'linea-c' => [
         'label' => 'Línea C',
         'fields' => [
+            // --- MOLDES ---
+            // Línea C solo usa 1 molde según indicación
+            ['type' => 'header', 'label' => 'Configuración de Moldes'],
+            ['name' => 'matricula_molde', 'label' => 'Matrícula Molde', 'type' => 'text'],
+
+            // --- VARIABLES ---
             ['type' => 'header', 'label' => 'Flujos y Mezcla'],
             ['name' => 'KG_semolato_semola', 'label' => 'Kg Sémola/Semolato', 'type' => 'number'],
             ['name' => 'porcentaje_agua', 'label' => '% Agua', 'type' => 'number'],
@@ -144,11 +162,17 @@ return [
     ],
 
     // =========================================================================
-    // LÍNEA D (Pastas Cortas) - Basado en LineaDController
+    // LÍNEA D (Pastas Cortas)
     // =========================================================================
     'linea-d' => [
         'label' => 'Línea D',
         'fields' => [
+            // --- MOLDES ---
+            ['type' => 'header', 'label' => 'Configuración de Moldes'],
+            ['name' => 'matricula_molde_1', 'label' => 'Matrícula Molde 1', 'type' => 'text'],
+            ['name' => 'matricula_molde_2', 'label' => 'Matrícula Molde 2 (Opcional)', 'type' => 'text'],
+
+            // --- VARIABLES ---
             ['type' => 'header', 'label' => 'Humedades (%)'],
             ['name' => 'trabatto', 'label' => 'Trabatto', 'type' => 'number', 'step' => '0.01'],
             ['name' => 'presecado', 'label' => 'Presecado', 'type' => 'number', 'step' => '0.01'],
@@ -178,6 +202,22 @@ return [
             ['type' => 'header', 'label' => 'Dosificación'],
             ['name' => 'porcentaje_dosificacion', 'label' => '% Dosificación', 'type' => 'number'],
             ['name' => 'porsentaje_remolida', 'label' => '% Remolida', 'type' => 'number'],
+        ]
+    ],
+    'waste_settings' => [
+        'rework_types' => [ // Tipos de Reproceso
+            'Pasta Húmeda',
+            'Pasta Seca',
+            'Barrido Limpio',
+            'Corte de Arranque',
+        ],
+        'locations' => [ // Lugares de origen
+            'Prensa',
+            'Trabatto',
+            'Presecado',
+            'Secado',
+            'Enfriador',
+            'Empaque',
         ]
     ],
 ];

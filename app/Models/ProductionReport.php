@@ -10,17 +10,17 @@ class ProductionReport extends Model
 {
     protected $fillable = [
         'line_id', 
-        'production_date', // Antes 'fecha'
+        'production_date', 
         'shift_id', 
         'coordinator_id', 
         'operator_id', 
-        'status',          // Antes 'estado'
+        'status',          
         'verified_by', 
         'verified_at'
     ];
 
     protected $casts = [
-        'production_date' => 'date', // Antes 'fecha'
+        'production_date' => 'date',
         'verified_at' => 'datetime',
     ];
 
@@ -30,5 +30,12 @@ class ProductionReport extends Model
     public function coordinator(): BelongsTo { return $this->belongsTo(User::class, 'coordinator_id'); }
     public function operator(): BelongsTo { return $this->belongsTo(User::class, 'operator_id'); }
     
+    // Variables (Horas)
     public function variables(): HasMany { return $this->hasMany(ProcessVariable::class); }
+
+    // --- ESTA ES LA QUE FALTABA ---
+    public function references(): HasMany 
+    { 
+        return $this->hasMany(ReferenceChange::class); 
+    }
 }
