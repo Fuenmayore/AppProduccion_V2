@@ -18,13 +18,15 @@ class DashboardController extends Controller
         $now = Carbon::now();
         $today = Carbon::today();
 
-        // 1. ESTADO DE LÍNEAS + EFICIENCIA
+        // 1. ESTADO DE LÍNEAS + PRODUCTO ACTIVO + EFICIENCIA
         $linesStatus = ProductionLine::all()->map(function ($line) use ($now, $today) {
             
+            // Buscamos el reporte activo con sus relaciones de Producto y Marca
             $activeReport = ProductionReport::where('line_id', $line->id)
                 ->whereDate('production_date', $today)
                 ->where('status', 'Running')
-                ->with(['shift', 'coordinator', 'operator'])
+                // Eager loading de referencias para saber qué se está produciendo
+                ->with(['shift', 'coordinator', 'operator', 'references.product', 'references.brand'])
                 ->latest()
                 ->first();
 
@@ -32,59 +34,41 @@ class DashboardController extends Controller
                 ? $activeReport->variables()->latest('recorded_at')->first() 
                 : null;
             
-            // Variables por defecto
+            // Referencia actual (el último cambio de producto sin hora de fin)
+            $currentReference = $activeReport 
+                ? $activeReport->references->whereNull('end_time')->first() 
+                : null;
+            
             $statusColor = 'gray';
             $statusText = 'DETENIDA';
             $minutesSinceLast = 0;
             $timeSinceHuman = '--:--';
-            $efficiency = 0; // DATO DE VALOR: Eficiencia del turno
+            $efficiency = 0;
 
             if ($activeReport) {
                 $statusColor = 'green';
                 $statusText = 'OPERANDO';
 
-                // A. Cálculo de Tiempo (Supervisión)
                 if ($lastVariable) {
                     $lastRecordTime = Carbon::parse($today->toDateString() . ' ' . $lastVariable->recorded_at);
                     $minutesSinceLast = (int) $lastRecordTime->diffInMinutes($now);
+                    $timeSinceHuman = $minutesSinceLast < 60 ? "Hace {$minutesSinceLast} min" : "Hace " . round($minutesSinceLast / 60, 1) . " h";
 
-                    if ($minutesSinceLast < 60) {
-                        $timeSinceHuman = "Hace {$minutesSinceLast} min";
-                    } else {
-                        $hours = round($minutesSinceLast / 60, 1);
-                        $timeSinceHuman = "Hace {$hours} " . ($hours == 1 ? 'hora' : 'horas');
-                    }
-
-                    // Semáforo de Alerta (Prevención)
-                    if ($minutesSinceLast > 75) {
-                        $statusColor = 'yellow';
-                        $statusText = 'ATRASADA';
-                    }
-                    if ($minutesSinceLast > 120) {
-                        $statusColor = 'red';
-                        $statusText = 'CRÍTICO';
-                    }
+                    // Semáforo de Alerta por falta de registros
+                    if ($minutesSinceLast > 75) { $statusColor = 'yellow'; $statusText = 'ATRASADA'; }
+                    if ($minutesSinceLast > 120) { $statusColor = 'red'; $statusText = 'CRÍTICO'; }
                 } else {
                     $statusColor = 'blue'; 
                     $statusText = 'INICIANDO';
                     $timeSinceHuman = 'Esperando datos...';
                 }
 
-                // B. Cálculo de Eficiencia (Medición)
-                // Asumimos meta teórica: 1 registro por hora desde el inicio del turno
+                // Cálculo de Eficiencia (Registros reales vs Esperados por hora)
                 if ($activeReport->shift) {
-                    // Hora inicio turno (ej: 06:00)
                     $startShift = Carbon::parse($today->toDateString() . ' ' . $activeReport->shift->start_time);
-                    // Si es ahora (ej: 09:00), han pasado 3 horas -> Debería haber 3 registros
-                    $hoursElapsed = $startShift->diffInHours($now);
-                    
-                    // Evitar división por cero y horas negativas
-                    if ($hoursElapsed >= 1) {
-                        $realRecords = $activeReport->variables()->count();
-                        $efficiency = min(round(($realRecords / $hoursElapsed) * 100), 100);
-                    } else {
-                        $efficiency = 100; // Primera hora
-                    }
+                    $hoursElapsed = max(1, $startShift->diffInHours($now));
+                    $realRecords = $activeReport->variables()->count();
+                    $efficiency = min(round(($realRecords / $hoursElapsed) * 100), 100);
                 }
             }
 
@@ -93,78 +77,59 @@ class DashboardController extends Controller
                 'name' => $line->name,
                 'slug' => $line->slug,
                 'is_active' => (bool) $activeReport,
+                'product' => $currentReference ? $currentReference->product->name : '-', // <--- INFO PARA PASTEROS
+                'brand' => $currentReference ? $currentReference->brand->name : '-',     // <--- INFO PARA COORDINADOR
                 'shift' => $activeReport ? $activeReport->shift->name : '-',
                 'coordinator' => $activeReport ? $activeReport->coordinator->name : '-',
                 'operator' => $activeReport ? $activeReport->operator->name : '-',
                 'last_record' => $lastVariable ? Carbon::parse($lastVariable->recorded_at)->format('g:i A') : '--:--',
                 'minutes_since' => $minutesSinceLast,
                 'time_since' => $timeSinceHuman,
-                'records_count' => $activeReport ? $activeReport->variables()->count() : 0,
-                'efficiency' => $efficiency, // <--- NUEVO
+                'efficiency' => $efficiency,
                 'status_color' => $statusColor,
                 'status_text' => $statusText,
             ];
         });
 
-        // 2. CALIDAD Y DESPERDICIOS (NUEVO - MEDICIÓN)
-        $wasteQuery = WasteRecord::whereDate('date', $today);
-        $totalWaste = $wasteQuery->sum('weight_kg');
-        
-        // Top 3 Causas de Pérdida (Pareto)
+        // 2. PARETO DE DESPERDICIOS
+        $totalWaste = WasteRecord::whereDate('date', $today)->sum('weight_kg');
         $topDefects = WasteRecord::whereDate('date', $today)
             ->select('cause_comment', DB::raw('SUM(weight_kg) as total'))
             ->groupBy('cause_comment')
             ->orderByDesc('total')
             ->take(3)
             ->get()
-            ->map(function($item){
-                return [
-                    'name' => \Illuminate\Support\Str::limit($item->cause_comment, 20), // Acortar nombre
-                    'total' => $item->total
-                ];
-            });
+            ->map(fn($item) => [
+                'name' => \Illuminate\Support\Str::limit($item->cause_comment, 20),
+                'total' => (float) $item->total
+            ]);
 
-        // 3. ESTADÍSTICAS GLOBALES
-        $stats = [
-            'active_lines' => $linesStatus->where('is_active', true)->count(),
-            'total_records' => ProductionReport::whereDate('production_date', $today)
-                ->withCount('variables')
-                ->get()
-                ->sum('variables_count'),
-            'total_waste' => number_format($totalWaste, 1, ',', '.'), // <--- NUEVO KPI
-            'date_human' => $now->locale('es')->isoFormat('dddd, D [de] MMMM YYYY'),
-            'julian_day' => $now->dayOfYear,
-            'week_number' => $now->weekOfYear,
-            'current_time' => $now->format('g:i A'),
-        ];
-
-        // 4. ESTADO DE SILOS (Mantenemos la lógica visual)
+        // 3. ESTADO DE SILOS (AUTONOMÍA)
         $silos = SiloBatch::where('is_active', true)->get()->map(function ($silo) {
-            $percentage = 0;
-            if ($silo->initial_quantity > 0) {
-                $percentage = ($silo->current_quantity / $silo->initial_quantity) * 100;
-            }
-            $color = 'green';
-            if ($percentage < 50) $color = 'yellow';
-            if ($percentage < 20) $color = 'red';
-
+            $percentage = $silo->initial_quantity > 0 ? ($silo->current_quantity / $silo->initial_quantity) * 100 : 0;
             return [
                 'id' => $silo->id,
                 'name' => $silo->silo_name,
-                'code' => $silo->internal_batch_code,
                 'material' => $silo->quality_check['material_type'] ?? 'Materia Prima',
                 'current' => number_format($silo->current_quantity, 0, ',', '.'),
-                'initial' => number_format($silo->initial_quantity, 0, ',', '.'),
                 'percentage' => round($percentage),
-                'color' => $color,
+                'color' => $percentage < 25 ? 'red' : ($percentage < 50 ? 'yellow' : 'green'),
             ];
         });
 
         return Inertia::render('Dashboard', [
             'linesStatus' => $linesStatus,
-            'stats' => $stats,
+            'stats' => [
+                'active_lines' => $linesStatus->where('is_active', true)->count(),
+                'total_records' => ProductionReport::whereDate('production_date', $today)->withCount('variables')->get()->sum('variables_count'),
+                'total_waste' => number_format($totalWaste, 1, ',', '.'),
+                'date_human' => $now->locale('es')->isoFormat('dddd, D [de] MMMM YYYY'),
+                'julian_day' => $now->dayOfYear, // <--- REINTEGRADO
+                'week_number' => $now->weekOfYear,
+                'current_time' => $now->format('g:i A'),
+            ],
             'silos' => $silos,
-            'topDefects' => $topDefects, // <--- NUEVO
+            'topDefects' => $topDefects,
         ]);
     }
 }

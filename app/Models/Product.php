@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo; // Importante
 
 class Product extends Model
 {
@@ -11,4 +12,11 @@ class Product extends Model
     protected $casts = [
         'allowed_line_ids' => 'array', // <--- ESTO ES VITAL
     ];
+    /**
+    * Relación: El producto pertenece a una marca
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
 }

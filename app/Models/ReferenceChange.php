@@ -17,15 +17,23 @@ class ReferenceChange extends Model
         'recipe_id',
         'start_time',
         'end_time',
-        'molds_used', // O 'mold_data' (Verifica cómo lo pusiste en tu migración)
+        'molds_used',
     ];
 
     protected $casts = [
-        'molds_used' => 'array', // Esto permite guardar el array de moldes como JSON
+        'molds_used' => 'array',
     ];
 
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * ✅ RELACIÓN AGREGADA: Permite obtener la marca asociada al cambio
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
     }
 }

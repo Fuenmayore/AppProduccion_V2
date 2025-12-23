@@ -10,31 +10,18 @@ class Brand extends Model
 {
     use HasFactory;
 
-    /**
-     * Los atributos que se pueden asignar masivamente.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-    ];
+    protected $fillable = ['name'];
 
-    /**
-     * Obtener los cambios de referencia asociados a esta marca.
-     */
     public function referenceChanges(): HasMany
     {
         return $this->hasMany(ReferenceChange::class);
     }
     
     /**
-     * Si en el futuro decides agregar brand_id a la tabla de productos,
-     * descomenta esta relación:
+     * Relación: Una marca tiene muchos productos
      */
-    /*
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
     }
-    */
 }
