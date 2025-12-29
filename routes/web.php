@@ -18,10 +18,16 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 
+// Redirección o carga directa del Login como página de inicio
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
+    // Si el usuario ya está autenticado, lo mandamos al dashboard
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
+    
+    return Inertia::render('Auth/Login', [
+        'canResetPassword' => Route::has('password.request'),
+        'status' => session('status'),
     ]);
 });
 
