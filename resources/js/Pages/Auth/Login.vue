@@ -2,31 +2,60 @@
 import Checkbox from '@/Components/Checkbox.vue';
 import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
-/**
- * Definición de propiedades con sintaxis de objeto para mayor estabilidad.
- */
 defineProps({
-    canResetPassword: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
+    canResetPassword: { type: Boolean },
+    status: { type: String },
 });
 
-/**
- * Inicialización del formulario de autenticación.
- */
+// --- Lógica de Tiempo y Turnos ---
+const currentTime = ref(new Date());
+let timer;
+
+const updateClock = () => {
+    currentTime.value = new Date();
+};
+
+onMounted(() => {
+    timer = setInterval(updateClock, 1000);
+});
+
+onUnmounted(() => {
+    clearInterval(timer);
+});
+
+const formattedTime = computed(() => {
+    return currentTime.value.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    });
+});
+
+const formattedDate = computed(() => {
+    return currentTime.value.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+    });
+});
+
+const currentShift = computed(() => {
+    const hour = currentTime.value.getHours();
+    if (hour >= 6 && hour < 14) return { name: 'Turno Mañana', id: 'T1', color: 'text-amber-500', bg: 'bg-amber-50' };
+    if (hour >= 14 && hour < 22) return { name: 'Turno Tarde', id: 'T2', color: 'text-indigo-500', bg: 'bg-indigo-50' };
+    return { name: 'Turno Noche', id: 'T3', color: 'text-purple-500', bg: 'bg-purple-50' };
+});
+
+// --- Formulario ---
 const form = useForm({
     email: '',
     password: '',
     remember: false,
 });
 
-/**
- * Procesa el envío de las credenciales al sistema.
- */
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
@@ -37,173 +66,154 @@ const submit = () => {
 <template>
     <Head title="Acceso al Sistema - TRAZABILIDAD" />
 
-    <!-- Contenedor principal con fondo de alta visibilidad para descanso visual de adultos -->
-    <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4 sm:p-6 font-sans text-slate-900 selection:bg-indigo-100">
+    <div class="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-4 sm:p-6 font-sans text-slate-900 selection:bg-indigo-100 relative overflow-hidden">
         
-        <!-- Elementos decorativos sutiles de fondo (Arquitectura de luz) -->
-        <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-            <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-indigo-100/40 rounded-full blur-[100px]"></div>
-            <div class="absolute bottom-0 left-0 w-1/4 h-1/4 bg-blue-100/30 rounded-full blur-[80px]"></div>
-            <!-- Patrón de rejilla industrial minimalista -->
-            <div class="absolute inset-0 opacity-[0.05]" style="background-image: radial-gradient(#6366f1 1.5px, transparent 0); background-size: 40px 40px;"></div>
+        <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <div class="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-100/50 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-100/40 rounded-full blur-[100px]"></div>
+            <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');"></div>
         </div>
 
-        <div class="relative w-full max-w-lg z-10 animate-fade-in-up">
+        <div class="relative w-full max-w-[1100px] grid lg:grid-cols-2 gap-0 bg-white rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.15)] overflow-hidden animate-fade-in">
             
-            <!-- Identidad Visual: El nombre centrado en el propósito: TRAZABILIDAD -->
-            <div class="flex flex-col items-center mb-10 group">
-                <div class="relative mb-6">
-                    <div class="absolute inset-0 bg-indigo-600 rounded-2xl blur-xl opacity-10 group-hover:opacity-30 transition-opacity"></div>
-                    <div class="relative w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center shadow-2xl transition-transform group-hover:scale-105 group-hover:rotate-2">
-                        <!-- Icono de Seguridad/Planta -->
-                        <svg class="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
+            <div class="hidden lg:flex flex-col justify-between p-16 bg-slate-900 relative">
+                <div class="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                    <div class="absolute inset-0" style="background-image: radial-gradient(#ffffff 1px, transparent 0); background-size: 30px 30px;"></div>
+                </div>
+
+                <div class="relative z-10">
+                    <div class="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-8">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                        </span>
+                        <span class="text-indigo-100 text-[10px] font-black uppercase tracking-[0.2em]">Terminal Operativa Activa</span>
+                    </div>
+
+                    <h1 class="text-6xl font-black text-white leading-none tracking-tighter uppercase italic">
+                        TRAZA<br /><span class="text-indigo-500 not-italic">BILIDAD</span>
+                    </h1>
+                    <p class="mt-6 text-slate-400 max-w-xs text-lg font-medium leading-relaxed">
+                        Sistema de control de producción y gestión de variables en tiempo real.
+                    </p>
+                </div>
+
+                <div class="relative z-10 space-y-6">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl">
+                            <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hora Local</p>
+                            <p class="text-3xl font-mono font-bold text-white tabular-nums">{{ formattedTime }}</p>
+                        </div>
+                        <div class="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-3xl">
+                            <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Estado del Turno</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-bold text-white uppercase italic">{{ currentShift.id }}</span>
+                                <span class="text-[10px] font-bold text-slate-400 leading-tight">{{ currentShift.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-2">
+                        <p class="text-sm font-bold text-slate-500 capitalize">{{ formattedDate }}</p>
                     </div>
                 </div>
-                <h1 class="text-4xl font-black tracking-tighter text-slate-800 uppercase italic leading-none text-center">
-                    <span class="text-indigo-600 not-italic">TRAZABILIDAD</span>
-                </h1>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.5em] mt-3 italic">Industrial Monitoring Stack</p>
             </div>
 
-            <!-- Tarjeta de Login (Diseño Premium Blanco) -->
-            <div class="bg-white border border-slate-200 rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.08)] p-10 md:p-14 relative overflow-hidden">
-                <!-- Barra de acento superior indicando seguridad -->
-                <div class="absolute top-0 left-0 w-full h-1.5 bg-indigo-600"></div>
+            <div class="p-10 md:p-16 lg:p-20 flex flex-col justify-center">
+                <div class="mb-10 lg:hidden flex flex-col items-center">
+                    <h1 class="text-3xl font-black text-slate-900 italic tracking-tighter">TRAZABILIDAD</h1>
+                    <div :class="`mt-2 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${currentShift.bg} ${currentShift.color}`">
+                        {{ currentShift.name }} • {{ formattedTime }}
+                    </div>
+                </div>
 
-                <!-- Mensaje de estado de Laravel -->
-                <div v-if="status" class="mb-8 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 text-sm font-bold text-center italic">
+                <div class="mb-12">
+                    <h2 class="text-3xl font-black text-slate-900 tracking-tight uppercase">Ingreso</h2>
+                    <p class="text-slate-400 font-bold text-sm mt-1">Identifíquese para registrar producción</p>
+                </div>
+
+                <div v-if="status" class="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-700 text-sm font-bold italic">
                     {{ status }}
                 </div>
 
-                <h2 class="text-2xl font-black text-slate-800 mb-10 uppercase tracking-tight border-b border-slate-50 pb-5">Ingreso de Personal</h2>
-
-                <form @submit.prevent="submit" class="space-y-8">
-                    <!-- Campo: Correo Electrónico Operativo -->
-                    <div class="space-y-3">
-                        <label for="email" class="block text-[11px] font-black text-slate-400 uppercase tracking-widest ml-2">Email Autorizado</label>
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-indigo-500 transition-colors">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            </div>
+                <form @submit.prevent="submit" class="space-y-6">
+                    <div class="group">
+                        <label for="email" class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-1">Usuario / Email</label>
+                        <div class="relative">
                             <input 
                                 id="email" 
                                 type="email" 
                                 v-model="form.email" 
-                                class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-slate-900 text-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all placeholder:text-slate-300 font-bold" 
-                                placeholder="usuario@empresa.com"
+                                class="w-full bg-slate-50 border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all placeholder:text-slate-300" 
+                                placeholder="nombre@empresa.com"
                                 required 
                                 autofocus
-                                autocomplete="username"
                             >
                         </div>
-                        <InputError class="mt-1 ml-4" :message="form.errors.email" />
+                        <InputError class="mt-2 ml-2" :message="form.errors.email" />
                     </div>
 
-                    <!-- Campo: Llave de Seguridad -->
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center px-2">
-                            <label for="password" class="block text-[11px] font-black text-slate-400 uppercase tracking-widest">Contraseña</label>
-                            <Link v-if="canResetPassword" :href="route('password.request')" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-tight">
-                                ¿Recuperar clave?
+                    <div>
+                        <div class="flex justify-between items-center mb-2 px-1">
+                            <label for="password" class="block text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Contraseña</label>
+                            <Link v-if="canResetPassword" :href="route('password.request')" class="text-[10px] font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter">
+                                ¿Olvidó su clave?
                             </Link>
                         </div>
-                        <div class="relative group">
-                            <div class="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-indigo-500 transition-colors">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                            </div>
-                            <input 
-                                id="password" 
-                                type="password" 
-                                v-model="form.password" 
-                                class="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-14 pr-6 py-5 text-slate-900 text-lg focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all placeholder:text-slate-300 font-bold" 
-                                placeholder="••••••••"
-                                required 
-                                autocomplete="current-password"
-                            >
-                        </div>
-                        <InputError class="mt-1 ml-4" :message="form.errors.password" />
+                        <input 
+                            id="password" 
+                            type="password" 
+                            v-model="form.password" 
+                            class="w-full bg-slate-50 border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition-all placeholder:text-slate-300" 
+                            placeholder="••••••••"
+                            required 
+                        >
+                        <InputError class="mt-2 ml-2" :message="form.errors.password" />
                     </div>
 
-                    <!-- Recordar sesión activa -->
-                    <div class="flex items-center px-4">
+                    <div class="flex items-center px-2">
                         <label class="flex items-center cursor-pointer group">
-                            <Checkbox name="remember" v-model:checked="form.remember" class="w-6 h-6 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 shadow-sm" />
-                            <span class="ms-4 text-sm font-bold text-slate-500 group-hover:text-slate-800 transition-colors uppercase tracking-tight">Mantener sesión activa</span>
+                            <Checkbox name="remember" v-model:checked="form.remember" class="w-5 h-5 rounded-md border-slate-300 text-slate-900 focus:ring-slate-900" />
+                            <span class="ms-3 text-sm font-bold text-slate-500 group-hover:text-slate-900 transition-colors">Recordar mi terminal</span>
                         </label>
                     </div>
 
-                    <!-- Botón de Acción Principal -->
-                    <div class="pt-6">
+                    <div class="pt-4">
                         <button 
                             type="submit" 
                             :disabled="form.processing" 
-                            class="w-full bg-slate-900 text-white py-6 rounded-[2rem] font-black text-xl uppercase tracking-[0.2em] shadow-[0_20px_50px_-10px_rgba(15,23,42,0.4)] hover:shadow-indigo-200 hover:bg-indigo-600 hover:-translate-y-1 active:scale-95 transition-all border-b-8 border-slate-950 flex items-center justify-center disabled:opacity-50"
+                            class="w-full bg-slate-900 text-white py-6 rounded-2xl font-black text-lg uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-600 hover:-translate-y-1 active:scale-[0.98] transition-all flex items-center justify-center disabled:opacity-50"
                         >
-                            <span v-if="!form.processing">Entrar al Sistema</span>
-                            <span v-else class="flex items-center">
-                                <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Validando...
-                            </span>
+                            <span v-if="!form.processing">Acceder al Sistema</span>
+                            <svg v-else class="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
                         </button>
                     </div>
                 </form>
-            </div>
 
-            <!-- Registro / Ayuda para el usuario -->
-            <div class="mt-12 text-center">
-                <p class="text-xs font-black text-slate-400 uppercase tracking-widest leading-loose">
-                    ¿Requiere acceso para esta planta? <br />
-                    <Link :href="route('register')" class="text-indigo-600 hover:underline font-bold transition-all">
-                        Solicitar cuenta de terminal
-                    </Link>
-                </p>
+                <div class="mt-10 pt-10 border-t border-slate-100">
+                    <p class="text-center text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                        ¿Nueva estación? 
+                        <Link :href="route('register')" class="text-indigo-600 hover:text-indigo-800 ml-2">Registrar cuenta</Link>
+                    </p>
+                </div>
             </div>
         </div>
 
-        <!-- Footer de Seguridad Técnica -->
-        <div class="absolute bottom-6 w-full text-center pointer-events-none opacity-40">
-            <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.6em]">
-                Protocolo de Trazabilidad Seguro <span class="mx-2 text-indigo-300">•</span> v2.5.0 Stable Build
-            </p>
+        <div class="absolute bottom-6 w-full flex justify-center gap-8 opacity-30 pointer-events-none">
+            <span class="text-[10px] font-black uppercase tracking-[0.3em]">Encrypted Node 01</span>
+            <span class="text-[10px] font-black uppercase tracking-[0.3em]">v2.5.0-STABLE</span>
         </div>
     </div>
 </template>
 
 <style scoped>
-/* Estilos para asegurar legibilidad en el autocompletado */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #0f172a;
-  -webkit-box-shadow: 0 0 0px 1000px #f8fafc inset;
-  transition: background-color 5000s ease-in-out 0s;
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
-
-@keyframes fadeInUp {
-    from { 
-        opacity: 0; 
-        transform: translateY(30px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
-}
-
-.animate-fade-in-up {
-    animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.font-sans {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+.animate-fade-in {
+    animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 </style>
